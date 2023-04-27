@@ -2,7 +2,7 @@
 
 Welcome to geLine. 
 
-geLine app is a basic tool that allow you to visualize the gene expression trajectory across the neuronal lineage of the olfactory sensory neurons. 
+[geLine](https://justice-lu.shinyapps.io/geLine/) app is a basic tool that allow you to visualize the gene expression trajectory across the neuronal lineage of the olfactory sensory neurons. 
 
 ## About geLine 
 `Subject Gene` : A single gene of interest.  
