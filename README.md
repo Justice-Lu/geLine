@@ -5,12 +5,12 @@ Welcome to geLine.
 geLine app is a basic tool that allow you to visualize the gene expression trajectory across the neuronal lineage of the olfactory sensory neurons. 
 
 ## About geLine 
-`Subject Gene` : A single gene of interest  
+`Subject Gene` : A single gene of interest.  
 `Query Gene` : List of genes to calculate expression trajectory difference against `Subject Gene`. 
 
-`Y axis` : Normalized gene expression. Every gene's expression count is normalized by it's minimum and maximum counts
-`X axis` : Contains continuous value of diffusion pseudotime value. This represents how mature is the given cell in the olfactory sensory neurons lineage
-`Color/Hover` :  Color and hover value displays the RMSD of how far apart is the query gene compared to the subject gene's trajectory
+`Y axis` : Normalized gene expression. Every gene's expression count is normalized by it's minimum and maximum counts.  
+`X axis` : Contains continuous value of diffusion pseudotime value. This represents how mature is the given cell in the olfactory sensory neurons lineage.  
+`Color/Hover` :  Color and hover value displays the RMSD of how far apart is the query gene compared to the subject gene's trajectory.  
 
 ![geLine shot](www/geLine_screenshot.png)
 
