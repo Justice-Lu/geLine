@@ -123,7 +123,10 @@ ExpressionPlot <- function(Sub_gene, Que_gene){
 ui <- fluidPage(
     titlePanel("Gene Expression trajectory in Olfactory Sensory Neurons"),
     h5("Here you can input your gene of reference in Subject gene, additional query genes can be added to display trajectory difference and root mean square error as color saturation. "),
-    h5(""),
+    div(style = "display: flex; align-items: center;",
+        h5(style = "margin-right: 10px;","For source code visit"),
+        tags$a(href = "https://github.com/Justice-Lu/geLine", "   geLine github")
+        ),
     sidebarLayout(
         sidebarPanel(
             fluidRow(
