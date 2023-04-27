@@ -1,0 +1,13 @@
+name: Shiny_line
+title: Shiny_line
+username:
+account: justice-lu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8757932
+bundleId: 7057969
+url: https://justice-lu.shinyapps.io/shiny_line/
+when: 1680798249.87425
+lastSyncTime: 1680798249.87426
+asMultiple: FALSE
+asStatic: FALSE
