@@ -1,0 +1,192 @@
+library(shiny)
+library(plotly)
+library(dplyr)
+library(readr)
+library(Metrics)
+library(viridis)
+
+# READ IN DATA 
+ge_table <- read_csv('./ge_normalized_GSE151346_MOE_ALL_OlfrSum.csv')
+
+# For testing purpose
+gene_col <- c('index','Rtp1', 'Rtp2', 'Omp', 'Gap43','Gfy', 'Clgn', 'Syt1', 'Syt5')
+temp <- sample(ge_table, 11)
+temp <- cbind(ge_table %>% select(gene_col), temp)
+
+# melt ge_table for plotting 
+ge_data <- reshape2::melt(ge_table, 
+                          id.vars = "index", value.vars = ge_table,
+                          variable.name = "gene", value.name = "expression")
+
+# Sub_gene = 'Rtp1'
+# Que_gene = c('Rtp2', 'Omp','Gfy', 'Clgn', 'Syt1', 'Syt5')
+
+ExpressionPlot <- function(Sub_gene, Que_gene){
+    # Write function to calculate the mse of query gene to subject gene 
+    sub_data <- ge_data %>% filter(gene %in% Sub_gene)
+    que_data <- ge_data %>% filter(gene %in% Que_gene)
+    # Create an mse table to store rmse of Query genes to Subject genes. Used for coloring
+    rmse_data <- data.frame(matrix(ncol = length(Que_gene), nrow = 1))
+    colnames(rmse_data) <- Que_gene
+    rownames(rmse_data) <- 'rmse'
+    for (q in Que_gene){
+        rmse_data[q] <- rmse(sub_data$expression, (que_data %>% filter(gene == q))$expression)
+        # que_data %>% filter(gene == q) %>% mutate(rmse = rmse(sub_data$expression, 
+        #                                                       (que_data %>% filter(gene == q))$expression))
+    }
+    rmse_data <- data.frame(t(rmse_data))
+    rmse_data <- tibble::rownames_to_column(rmse_data, "gene")
+    
+    
+    # Add rmse data into que_data for plotting 
+    que_data <- que_data %>% left_join(rmse_data)
+    que_data <- que_data %>%  mutate( rmse_color = ifelse(rmse < 0.05, '0', 
+                                       ifelse(rmse < 0.15, '0.1', 
+                                          ifelse(rmse < 0.25, '0.2',
+                                             ifelse(rmse < 0.35, '0.3', 
+                                                ifelse(rmse < 0.45, '0.4', 
+                                                   ifelse(rmse < 0.55, '0.5', 
+                                                      ifelse(rmse < 0.65, '0.6', 
+                                                         ifelse(rmse < 0.75, '0.7', 
+                                                            ifelse(rmse < 0.85, '0.8', 
+                                                               ifelse(rmse < 0.95, '0.9', 
+                                                                  if(rmse <= 1){
+                                                                      '1'
+                                                                }
+                                                           )))))))))))
+    # Define a color_map for the rmse_color variable 
+    color_map <- c('0' = viridis(11)[1],
+                   '0.1' = viridis(11)[2],
+                   '0.2' = viridis(11)[3],
+                   '0.3' = viridis(11)[4],
+                   '0.4' = viridis(11)[5],
+                   '0.5' = viridis(11)[6],
+                   '0.6' = viridis(11)[7],
+                   '0.7' = viridis(11)[8],
+                   '0.8' = viridis(11)[9],
+                   '0.9' = viridis(11)[10], 
+                   '1' = viridis(11)[11])
+
+    # plot <- plot_ly(ge_data, x= ~index) 
+    plot <- plot_ly() 
+
+    # add line traces of query genes updated
+    for(q in Que_gene){ 
+        plot_data <- que_data %>% filter(gene %in% q)
+        # plot <- plot %>% add_trace(name = q,
+        #                            data = plot_data,
+        #                            x = ~index,
+        #                            y = ~expression,
+        #                            # color = (que_data %>% filter(gene %in% q))$rmse[1],
+        #                            color = plot_data$rmse_color,
+        #                            hovertemplate = paste(q," <br> RMSE: ", 
+        #                                                  format(round(plot_data$rmse[1],3), nsmall = 3)),
+        #                            type = 'scatter',
+        #                            mode = 'lines'
+        #                            ) 
+        
+        plot <- plot %>% add_trace(name = q,
+                                   x = plot_data$index,
+                                   y = plot_data$expression,
+                                   hovertemplate = paste(q," <br> RMSE: ", 
+                                                         format(round(plot_data$rmse[1],3), nsmall = 3)),
+                                   type = 'scatter',
+                                   mode = 'lines',
+                                   line = list(
+                                       color = color_map[plot_data$rmse_color],
+                                       width = 5
+                                   )
+                            )
+    }
+    # Plot subject gene 
+    plot <- plot %>% add_trace(data = sub_data,
+                               name = Sub_gene,
+                               hovertemplate = (Sub_gene),
+                               x = ~index,
+                               y = ~expression,
+                               type = 'scatter',
+                               mode = 'lines',
+                               line = list(color = 'pink', width = 5))
+    plot <- plot %>% layout( xaxis = list(title = "Pseudotime across OSN lineage",
+                                          showticklabels = TRUE,
+                                          showgrid = FALSE),
+                             yaxis = list(title = "Normalized expression", 
+                                          showline = TRUE, 
+                                          showgrid = FALSE)
+    )
+
+    return(plot)
+}
+
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+    titlePanel("Gene Expression trajectory in Olfactory Sensory Neurons"),
+    h5("Here you can input your gene of reference in Subject gene, additional query genes can be added to display trajectory difference and root mean square error as color saturation. "),
+    h5(""),
+    sidebarLayout(
+        sidebarPanel(
+            fluidRow(
+                column(12,
+                       align="left",
+                       selectizeInput(
+                           inputId = "sub_genes", 
+                           label = "Subject Gene", 
+                           choices = unique(ge_data$gene),
+                           # choices = NULL, 
+                           selected = c("Omp"),
+                           multiple = FALSE
+                       )
+                ),
+                column(12,
+                       align="left",
+                       selectizeInput(
+                           inputId = "que_genes", 
+                           label = "Query genes", 
+                           choices = unique(ge_data$gene),
+                           # choices = NULL, 
+                           selected = c("Stoml3", "Gap43"),
+                           multiple = TRUE
+                       )
+                )
+            )
+        ),
+        mainPanel(
+            fluidRow(
+                column(10,
+                       # position='bottom',
+                       plotlyOutput(outputId = "ge_line", width="100%"),
+                       img(src='geLine_cellbar.png', width="80%", 
+                           style="display: block; margin-left: 50px;")
+                       # img(src='geLine_colorscale.png', width="10%")
+                )
+            )
+        )
+    )
+)
+
+
+
+
+# Define server logic required to generate plotly plots
+server <- function(input, output, session) {
+    
+    # shiny::updateSelectInput(session, 
+    #                          inputId = 'sub_genes', 
+    #                          label = 'update choices',
+    #                          choices = unique(ge_data$gene)) 
+    # shiny::updateSelectInput(session, 
+    #                          inputId = 'que_genes', 
+    #                          label = 'update choices',
+    #                          selected = c("Stoml3", "Gap43"),
+    #                          choices = unique(ge_data$gene)) 
+    
+    
+    # Render the selected variable
+    output$ge_line <- renderPlotly(ExpressionPlot(Sub_gene = input$sub_genes, 
+                                                  Que_gene = input$que_genes))
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+
